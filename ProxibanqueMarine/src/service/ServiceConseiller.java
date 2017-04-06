@@ -1,0 +1,279 @@
+/**
+ * 
+ */
+package service;
+
+import java.util.Collection;
+
+import metier.Adresse;
+import metier.CarteVisa;
+import metier.Client;
+import metier.Compte;
+import metier.CompteCourant;
+import metier.CompteEpargne;
+import metier.Conseiller;
+
+/**
+ * @author Stagiaire
+ *
+ */
+public class ServiceConseiller implements IConseillerCarteVisa, IConseillerClient, IConseillerCompte,
+		IConseillerGestionPatrimoine, IConseillerSimulation, IConseillerVirement {
+
+	/* (non-Javadoc)
+	 * @see service.IConseillerVirement#EffectuerVirement(metier.Compte, metier.Compte)
+	 */
+	@Override
+	public void EffectuerVirement(Compte c1, Compte c2, int montant) {
+		
+		if (montant<0)
+		{
+			System.out.println("montant inférieur à zero !");
+		}
+		else 
+		{
+			if(c1.getTypeCompte()==2)
+			{
+				if(montant<c1.getSolde())
+				{
+					c1.setSolde(c1.getSolde()-montant);
+					c2.setSolde(c2.getSolde()+montant);
+				}
+				else
+				{
+					System.out.println("montant supperieur au solde");
+				}
+			}
+			else
+			{
+				if(c1.getTypeCompte()==1)
+				{
+					if((c1.getSolde()-montant)>-1000)
+					{
+						c1.setSolde(c1.getSolde()-montant);
+						c2.setSolde(c2.getSolde()+montant);
+					}
+					else
+					{
+						System.out.println("le decouvert n'autorise pas ce virement");
+					}
+				}
+			
+			}
+		}
+			
+	}
+
+
+	@Override
+	public double EffectuerSimulationCredit(double montant, int taux, int duree) {
+		double montantARembourserParMois;
+		if (montant<=0)
+		{
+			montantARembourserParMois = 0;
+		}
+		else
+		{
+		double montantARembourser = montant*(1+(taux/100));
+		montantARembourserParMois = montantARembourser/duree;
+		}
+		return montantARembourserParMois;
+	}
+
+
+	@Override
+	public void GestionPatrimoine(Client c) {
+
+	}
+
+
+	/**
+	 * Ajout d'un compte Epargne ou un Compte Courant à un client
+	 */
+		@Override
+		public void AjouterCompteClient(Client c, Compte co) {
+
+			if(co.getTypeCompte() == 3){ //Test si le compte à ajouter est un Compte Epargne
+				if(c.getMonCompteEpargne() == null){ // Test pour savoir si le client a déjà un compte epargne
+				
+					c.setMonCompteEpargne(co);
+					System.out.println("Le compte Epargne a été ajouté.");
+				}else{
+					System.out.println("Le client a déjà un Compte Epargne.");
+				}				
+			
+			}
+			else{
+				if(co.getTypeCompte() == 1000){	// Dans le cas d'un ajout de Compte Courant
+					if(c.getMonCompteCourant() == null){ // Test pour savoir si le client a déjà un compte courant
+					
+						c.setMonCompteCourant(co);
+						System.out.println("Le compte courant a été ajouté.");
+											
+					}
+					else{
+						System.out.println("Le client a déjà un Compte Courant.");
+					}
+				
+				}
+				
+							
+			}			
+		}
+
+	/**
+	 * Suppression d'un compte Epargne ou compte courant
+	 */
+
+		@Override
+		public void SupprimerCompteClient(Compte co, Client c) {
+				
+			if(co.getTypeCompte() == 3){ //Test si le compte à supprimer est un Compte Epargne
+				if(c.getMonCompteEpargne() != null){ // Test pour savoir si le client a déjà un compte epargne
+				
+				c.setMonCompteEpargne(null);
+				System.out.println("Le compte Epargne a été supprimé.");
+				
+				}else{
+					System.out.println("Le Client n'a pas de compte épargne");
+				}				
+			
+			}
+			else{
+				if(co.getTypeCompte() == 1000){	// Dans le cas d'une suppression du Compte Courant
+					if(c.getMonCompteCourant() != null){ // Test pour savoir si le client a déjà un compte courant
+					
+						c.setMonCompteCourant(null);
+						System.out.println("Le compte courant a été supprimé.");
+											
+					}
+					else{
+						System.out.println("Le Client n'a pas de compte courant.");
+					}
+				}
+										
+			}			
+			
+		}
+
+	/**
+	 * Affichage d'un compte client
+	 */
+		@Override
+		public void AfficherCompteClient(Compte compte) {
+			System.out.println(compte);
+		}
+
+	/**
+	 * Ajouter un client par un conseiller
+	 */
+		@Override
+		public void AjouterClient(Conseiller co, Client c) {
+		
+			if((co.getMesClientsEntreprises().size() + co.getMesClientsParticuliers().size()) < 10){ // Addition du nbre de client entreprise et  nbre client particulier devant être inférieur à 10
+			
+				if(c.getTypeClient()==1){ //Test si client entreprise ou particulier
+			
+					//Ajouter client particulier
+					Collection<Client> cl1 = co.getMesClientsParticuliers(); //Récupération de la liste des clients du conseiller dans la collection cl1
+					cl1.add(c); //Ajout du client c à la collection cl1
+					co.setMesClientsParticuliers(cl1); //Association de la nouvelle collection cl1 au conseiller co
+					c.setMonConseillerClient(co); //Association du conseiller co au client c
+					
+					//Ajout Client à la liste de tous les clients
+					Collection<Client> col2 = co.getTousMesClients();
+					col2.add(c); //Ajout du client à tous les clients cl2
+					co.setTousMesClients(col2); //Association de la nouvelle collection cl2 à la liste
+											
+					
+					
+				}
+				else{
+					//Ajouter client entreprise
+				
+					Collection<Client> cl2 = co.getMesClientsEntreprises();
+					cl2.add(c);
+					co.setMesClientsEntreprises(cl2);
+					c.setMonConseillerClient(co);
+					
+					
+					//Ajout Client à la liste de tous les clients
+					Collection<Client> col3 = co.getTousMesClients();
+					col3.add(c); //Ajout du client à tous les clients cl2
+					co.setTousMesClients(col3); //Association de la nouvelle collection cl2 à la liste
+					}
+			
+			} else{
+				System.out.println("Vous avez déjà 10 clients.");
+			}	
+				
+		}
+
+		/**
+		 * Modification de l'adresse et du téléphone du client
+		 */
+
+		@Override
+		public void ModifierClient(Client c, Adresse a, int telephone) {
+					
+			c.setTelephone(telephone);
+			c.setSonAdresse(a);
+		}
+	/**
+	 * Supprime un client de la liste d'un conseiller
+	 */
+
+		@Override
+		public void SupprimerClient(Client c, Conseiller co) {
+			
+			if(c.getTypeClient()==1){ //Test si client entreprise ou particulier
+			
+			Collection<Client> col = co.getMesClientsParticuliers(); //Récupération de la liste des clients du conseiller dans la collection col
+			col.remove(c);	//Suppression du client de la collection
+			co.setMesClientsParticuliers(col);	//Association de la Collection mise à jour au conseiller
+			
+			//Suppression du Client à la liste de tous les clients
+			Collection<Client> cl2 = co.getTousMesClients();
+			cl2.remove(c); //Ajout du client à tous les clients cl2
+			co.setTousMesClients(cl2); //Association de la nouvelle collection cl2 à la liste
+			
+			}
+			
+			Collection<Client> col = co.getMesClientsEntreprises(); //Récupération de la liste des clients du conseiller dans la collection col
+			col.remove(c);	//Suppression du client de la collection
+			co.setMesClientsEntreprises(col);	//Association de la Collection mise à jour au conseiller
+			
+			//Suppression du  Client à la liste de tous les clients
+			Collection<Client> cl2 = co.getTousMesClients();
+			cl2.remove(c); //Ajout du client à tous les clients cl2
+			co.setTousMesClients(cl2); //Association de la nouvelle collection cl2 à la liste
+				
+			}
+	/**
+	 * Affichage d'un client
+	 */
+
+		@Override
+		public void AfficherClient(Client c) {
+		
+			System.out.println(c);
+		}
+	/**
+	 * Ajout d'une carte à un compte
+	 */
+
+		@Override
+		public void ActivationCarteVisa(Compte c, CarteVisa cv) {
+				c.setMaCarteVisa(cv);
+		}
+
+	/**
+	 *Supprimer la carte de son compte 
+	 */
+
+		@Override
+		public void DesactivationCarteVisa(Compte c, CarteVisa cv) {
+				c.setMaCarteVisa(null);
+		}
+
+	}
